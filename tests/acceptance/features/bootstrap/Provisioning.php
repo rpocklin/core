@@ -900,7 +900,7 @@ trait Provisioning {
 			$useLdap = false;
 		}
 
-		foreach ($usersAttributes as $userAttributes) {
+		foreach ($usersAttributes as $i => $userAttributes) {
 			if ($useLdap) {
 				$this->createLdapUser($userAttributes);
 			} else {
@@ -922,7 +922,7 @@ trait Provisioning {
 					// gidnumber 30000 is gid of default group "users"
 					$attributesToCreateUser['gidnumber'] = 30000;
 					// A new random number for uidnumber
-					$attributesToCreateUser['uidnumber'] = 40040 + count($this->getCreatedUsers());
+					$attributesToCreateUser['uidnumber'] = 40040 + count($this->getCreatedUsers()) + $i;
 				}
 				// Create a OCS request for creating the user. The request is not sent to the server yet.
 				$request = OcsApiHelper::createOcsRequest(
@@ -1220,6 +1220,8 @@ trait Provisioning {
 			}
 			$userAttributes["username"] = $username;
 			$userAttributes["email"] = $email;
+			$userAttributes['uidnumber'] = 40040 + count($this->getCreatedUsers());
+			$userAttributes['gidnumber'] = 30000;
 		}
 
 		$this->ocsContext->userSendsHTTPMethodToOcsApiEndpointWithBody(
@@ -1250,7 +1252,10 @@ trait Provisioning {
 		$password = $this->getActualPassword($password);
 		if (OcisHelper::isTestingOnOcis()) {
 			$email = $user . '@owncloud.org';
-			$bodyTable = new TableNode([['userid', $user], ['password', $password], ['username', $user], ['email', $email]]);
+			$bodyTable = new TableNode([['userid', $user], ['password', $password], ['username', $user], ['email', $email],
+					['uidnumber', 40040 + count($this->getCreatedUsers())],
+					['gidnumber', 30000],
+				]);
 		} else {
 			$email = null;
 			$bodyTable = new TableNode([['userid', $user], ['password', $password]]);
@@ -1284,7 +1289,10 @@ trait Provisioning {
 		$password = $this->getActualPassword($password);
 		if (OcisHelper::isTestingOnOcis()) {
 			$email = $user . '@owncloud.org';
-			$bodyTable = new TableNode([['userid', $user], ['password', $password], ['username', $user], ['email', $email], ['groups[]', $group]]);
+			$bodyTable = new TableNode([['userid', $user], ['password', $password], ['username', $user], ['email', $email], ['groups[]', $group],
+				['uidnumber', 40040 + count($this->getCreatedUsers())],
+				['gidnumber', 30000],
+			]);
 		} else {
 			$email = null;
 			$bodyTable = new TableNode(
