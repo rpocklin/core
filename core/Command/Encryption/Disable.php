@@ -22,19 +22,24 @@
 namespace OC\Core\Command\Encryption;
 
 use OCP\IConfig;
+use OCP\IDBConnection;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Disable extends Command {
+	/** @var IDBConnection */
+	protected $db;
 	/** @var IConfig */
 	protected $config;
 
 	/**
+	 * @param IDBConnection $db
 	 * @param IConfig $config
 	 */
-	public function __construct(IConfig $config) {
+	public function __construct(IDBConnection $db, IConfig $config) {
 		parent::__construct();
+		$this->db = $db;
 		$this->config = $config;
 	}
 
@@ -46,8 +51,20 @@ class Disable extends Command {
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->createFunction('COUNT(*)'))
+			->from('filecache', 'fc')
+			->where($qb->expr()->eq('fc.encrypted', $qb->expr()->literal('1')));
+		$results = $qb->execute();
+		$encryptedFilesCount = $results->fetchColumn(0);
+		$results->closeCursor();
+		if ($encryptedFilesCount > 0) {
+			$output->writeln('<info>The system still have encrypted files. Please decrypt them all before disabling encryption.</info>');
+			return 1;
+		}
+
 		/**
-		 * Delete both useMasterKey and userSepecificKey
+		 * Delete both useMasterKey and userSpecificKey
 		 */
 		$this->config->deleteAppValue('encryption', 'useMasterKey');
 		$this->config->deleteAppValue('encryption', 'userSpecificKey');
@@ -56,10 +73,10 @@ class Disable extends Command {
 
 		if ($this->config->getAppValue('core', 'encryption_enabled', 'no') !== 'yes') {
 			$output->writeln('Encryption is already disabled');
-			return 0;
+		} else {
+			$this->config->setAppValue('core', 'encryption_enabled', 'no');
+			$output->writeln('<info>Encryption disabled</info>');
 		}
-
-		$this->config->setAppValue('core', 'encryption_enabled', 'no');
-		$output->writeln('<info>Encryption disabled</info>');
+		return 0;
 	}
 }
