@@ -2757,6 +2757,34 @@ trait Sharing {
 		$this->getPublicPreviewOfFile($path, $token);
 	}
 
+	public function deleteAllSharesForUser($user) {
+		$user = $this->getActualUsername($user);
+		$url = $this->getSharesEndpointPath("?format=json");
+		$this->ocsContext->userSendsHTTPMethodToOcsApiEndpointWithBody(
+			$user, "GET", $url, null
+		);
+		if ($this->response->getStatusCode() !== 200) {
+			return;
+		}
+		$result = $this->response->getBody()->getContents();
+		$usersShares = \json_decode($result, true);
+		if (!\is_array($usersShares)) {
+			throw new Exception(
+				__METHOD__ . " API result about shares is not valid JSON"
+			);
+		}
+		if (!isset($usersShares['ocs']['data'])) {
+			return;
+		}
+		foreach ($usersShares['ocs']['data'] as $share) {
+			$share_id = $share['id'];
+			$url = $this->getSharesEndpointPath("/$share_id");
+			$this->ocsContext->userSendsHTTPMethodToOcsApiEndpointWithBody(
+				$user, "DELETE", $url, null
+			);
+		}
+	}
+
 	/**
 	 * replace values from table
 	 *

@@ -75,9 +75,10 @@ class OcisHelper {
 	 *
 	 * @return void
 	 */
-	public static function deleteRevaUserShares() {
+	public static function deleteRevaUserShares($user = "") {
 		$deleteCmd = self::getDeleteUserShareCommand();
-		if ($deleteCmd !== false) {
+		if ($deleteCmd !== false && $user !== "") {
+			$deleteCmd = \str_replace("%s", $user[0] . '/' . $user, $deleteCmd);
 			\exec($deleteCmd);
 		}
 	}
@@ -90,8 +91,7 @@ class OcisHelper {
 	public static function deleteRevaUserData($user = "") {
 		$deleteCmd = self::getDeleteUserDataCommand();
 		if ($deleteCmd !== false) {
-			$deleteCmd = \sprintf($deleteCmd, $user[0] . '/' . $user);
-//			var_dump($deleteCmd);
+			$deleteCmd = \str_replace("%s", $user[0] . '/' . $user, $deleteCmd);
 			\exec($deleteCmd);
 		} else {
 			self::recurseRmdir(self::getOcisRevaDataRoot() . "/data/" . $user);

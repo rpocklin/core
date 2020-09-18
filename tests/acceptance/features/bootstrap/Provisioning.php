@@ -4247,20 +4247,21 @@ trait Provisioning {
 	 */
 	public function afterScenario() {
 		$this->restoreParametersAfterScenario();
+
+		if (OcisHelper::isTestingOnOcis()) {
+			foreach ($this->getCreatedUsers() as $user) {
+				OcisHelper::deleteRevaUserShares($user["actualUsername"]);
+				$this->deleteAllSharesForUser($user["actualUsername"]);
+				OcisHelper::deleteRevaUserData($user["actualUsername"]);
+			}
+		} else {
+			$this->resetAdminUserAttributes();
+		}
 		if ($this->isTestingWithLdap()) {
 			$this->deleteLdapUsersAndGroups();
 		}
 		$this->cleanupDatabaseUsers();
 		$this->cleanupDatabaseGroups();
-
-		if (OcisHelper::isTestingOnOcis()) {
-			foreach ($this->getCreatedUsers() as $user) {
-				OcisHelper::deleteRevaUserData($user["actualUsername"]);
-			}
-			OcisHelper::deleteRevaUserShares();
-		} else {
-			$this->resetAdminUserAttributes();
-		}
 	}
 
 	/**
