@@ -86,7 +86,8 @@ class LoginController extends Controller {
 	}
 
 	/**
-	 * @NoAdminRequired
+         * @PublicPage
+	 * @NoCSRFRequired	 
 	 * @UseSession
 	 *
 	 * @return RedirectResponse
